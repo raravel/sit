@@ -11,6 +11,11 @@ if [ $IS_SVN_PROJ -ne 0 ]; then
 	exit 1;
 fi
 
+LESSER="colordiff | less -R"
+if [ "$(which bat)" != "" ]; then
+	LESSER="bat"
+fi
+
 PROJ_DIR=$(svn info | head -n 2 | tail -n 1 | awk -F': ' '{print $2}')
 PROJ=$(basename "$PROJ_DIR")
 P_FILE="$HOME/.svn/"$PROJ
@@ -59,8 +64,9 @@ if [ "$1" = "add" ]; then
 elif [ "$1" = "show" ]; then
 	print_p_file
 elif [ "$1" = "diff" ]; then
-	files=$(cat $P_FILE)
-	svn diff $files | colordiff | less -R
+	files=$(svn st -q | awk -F' ' '{print $2}' | grep -E -v "ipkg-ipq|\.dep_files")
+	files=$(echo $files)
+	eval "svn diff $files | "$LESSER
 elif [ "$1" = "clear" ]; then
 	echo $(cat $P_FILE | grep -v "$2") > $P_FILE
 	print_p_file
